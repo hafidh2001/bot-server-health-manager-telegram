@@ -128,7 +128,7 @@ export function serverExists(userId: string, name: string): boolean {
     SELECT 1 FROM servers WHERE user_id = ? AND name = ? LIMIT 1
   `);
 
-  return stmt.get(userId, name) !== undefined;
+  return stmt.get(userId, name) !== null;
 }
 
 /**

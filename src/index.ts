@@ -1,7 +1,15 @@
 import "dotenv/config";
 import { Telegraf } from "telegraf";
-import { handleStart, showMainMenu } from "./handlers/start";
-import { handleHelp } from "./handlers/help";
+import {
+  handleStart,
+  handleHelp,
+  handleAddServer,
+  handleAddModeSelect,
+  handleAddServerText,
+  handleAuthTypeSelect,
+  handleSaveServer,
+  handleSaveForced,
+} from "./handlers";
 
 // Check required env vars
 const requiredEnvVars = ["BOT_TOKEN", "ENCRYPTION_KEY"];
@@ -39,9 +47,22 @@ bot.use(async (ctx, next) => {
 bot.command("start", handleStart);
 bot.command("help", handleHelp);
 
-// Fallback for unhandled text
+// Callback query handlers for add server flow
+bot.action("add_server", handleAddServer);
+bot.action("add_cancel", handleAddModeSelect);
+bot.action("add_mode_form", handleAddModeSelect);
+bot.action("add_mode_cli", handleAddModeSelect);
+bot.action("add_auth_password", handleAuthTypeSelect);
+bot.action("add_auth_sshkey", handleAuthTypeSelect);
+bot.action("add_save_test", async (ctx) => handleSaveServer(ctx as any, true));
+bot.action("add_save_only", async (ctx) => handleSaveServer(ctx as any, false));
+bot.action("add_save_forced", handleSaveForced);
+bot.action("add_retry", handleSaveForced);
+
+// Handle text input - single handler for both add flow and fallback
 bot.on("text", async (ctx) => {
-  await ctx.reply("Use /start to open the main menu, or /help for available commands.");
+  // Pass to add server flow handler
+  await handleAddServerText(ctx as any);
 });
 
 // Graceful shutdown
