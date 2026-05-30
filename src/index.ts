@@ -18,8 +18,30 @@ import {
   handleMemory,
   handleServiceList,
   handlePM2List,
+  handlePM2Action,
+  handlePM2Restart,
+  handlePM2Stop,
   handleDockerList,
+  handleDockerAction,
+  handleDockerRestart,
+  handleDockerStop,
   handleLogMenu,
+  handleNginxInfo,
+  handleNginxRestart,
+  handleNginxStop,
+  handleSystemdList,
+  handleSystemdAction,
+  handleSystemdDescription,
+  handleSystemdRestart,
+  handleSystemdStop,
+  handleCLI,
+  handleNginxErrorLog,
+  handleNginxAccessLog,
+  handlePM2LogView,
+  handleDockerLogView,
+  handleJournalLog,
+  handleJournalLogWithService,
+  getCLIMode,
   showMainMenu,
 } from "./handlers";
 
@@ -84,11 +106,50 @@ bot.action(/^disk_\d+$/, handleDisk);
 bot.action(/^mem_\d+$/, handleMemory);
 bot.action(/^service_\d+$/, handleServiceList);
 bot.action(/^pm2list_\d+$/, handlePM2List);
+bot.action(/^pm2action_\d+_.+$/, handlePM2Action);
+bot.action(/^pm2restart_\d+_.+$/, handlePM2Restart);
+bot.action(/^pm2stop_\d+_.+$/, handlePM2Stop);
 bot.action(/^dockerlist_\d+$/, handleDockerList);
+bot.action(/^dockeraction_\d+_.+$/, handleDockerAction);
+bot.action(/^dockerrestart_\d+_.+$/, handleDockerRestart);
+bot.action(/^dockerstop_\d+_.+$/, handleDockerStop);
 bot.action(/^log_\d+$/, handleLogMenu);
+bot.action(/^cli_\d+$/, handleCLI);
+
+// Nginx handlers
+bot.action(/^nginxinfo_\d+$/, handleNginxInfo);
+bot.action(/^nginxrestart_\d+$/, handleNginxRestart);
+bot.action(/^nginxstop_\d+$/, handleNginxStop);
+
+// Systemd handlers
+bot.action(/^systemdlist_\d+$/, handleSystemdList);
+bot.action(/^sysdaction_\d+_.+$/, handleSystemdAction);
+bot.action(/^sysddesc_\d+_.+$/, handleSystemdDescription);
+bot.action(/^sysdrestart_\d+_.+$/, handleSystemdRestart);
+bot.action(/^sysdstop_\d+_.+$/, handleSystemdStop);
+
+// Log handlers
+bot.action(/^ngxerrorlog_\d+$/, handleNginxErrorLog);
+bot.action(/^ngxaccesslog_\d+$/, handleNginxAccessLog);
+bot.action(/^pm2log_\d+_.+$/, handlePM2LogView);
+bot.action(/^docklog_\d+_.+$/, handleDockerLogView);
+bot.action(/^journal_\d+$/, handleJournalLog);
+bot.action(/^journal_\d+_.+$/, handleJournalLogWithService);
 
 // Handle text input - single handler for both add flow and fallback
 bot.on("text", async (ctx) => {
+  const userId = ctx.from?.id.toString();
+  if (!userId) return;
+
+  // Check if user is in CLI mode
+  const cliServerId = getCLIMode(userId);
+  if (cliServerId) {
+    // Import here to avoid circular dependency
+    const { handleCLICommand } = await import("./handlers");
+    await handleCLICommand(ctx as any, cliServerId);
+    return;
+  }
+
   // Pass to add server flow handler
   await handleAddServerText(ctx as any);
 });

@@ -412,6 +412,21 @@ export async function restartPM2(connection: NodeSSH, appName: string): Promise<
 }
 
 /**
+ * Stop a PM2 application
+ */
+export async function stopPM2(connection: NodeSSH, appName: string): Promise<RestartResult> {
+  const result = await executeCommand(connection, `pm2 stop ${appName} 2>&1`);
+  const success = result.code === 0 && !result.stderr.includes("error");
+
+  return {
+    success,
+    message: success
+      ? `PM2 app '${appName}' stopped successfully`
+      : `Failed to stop PM2 app: ${result.stderr || result.stdout}`,
+  };
+}
+
+/**
  * Restart a Docker container
  */
 export async function restartDockerContainer(connection: NodeSSH, containerName: string): Promise<RestartResult> {
@@ -423,6 +438,21 @@ export async function restartDockerContainer(connection: NodeSSH, containerName:
     message: success
       ? `Container '${containerName}' restarted successfully`
       : `Failed to restart container: ${result.stderr || result.stdout}`,
+  };
+}
+
+/**
+ * Stop a Docker container
+ */
+export async function stopDockerContainer(connection: NodeSSH, containerName: string): Promise<RestartResult> {
+  const result = await executeCommand(connection, `docker stop ${containerName} 2>&1`);
+  const success = result.code === 0;
+
+  return {
+    success,
+    message: success
+      ? `Container '${containerName}' stopped successfully`
+      : `Failed to stop container: ${result.stderr || result.stdout}`,
   };
 }
 
@@ -442,10 +472,27 @@ export async function restartNginx(connection: NodeSSH): Promise<RestartResult> 
 }
 
 /**
+ * Stop Nginx
+ */
+export async function stopNginx(connection: NodeSSH): Promise<RestartResult> {
+  const result = await executeCommand(connection, `sudo systemctl stop nginx 2>&1`);
+  const success = result.code === 0;
+
+  return {
+    success,
+    message: success
+      ? "Nginx stopped successfully"
+      : `Failed to stop Nginx: ${result.stderr || result.stdout}`,
+  };
+}
+
+/**
  * Restart a systemd service
  */
 export async function restartSystemdService(connection: NodeSSH, serviceName: string): Promise<RestartResult> {
-  const result = await executeCommand(connection, `sudo systemctl restart ${serviceName} 2>&1`);
+  // Ensure serviceName has .service suffix for systemctl commands
+  const svcName = serviceName.endsWith(".service") ? serviceName : `${serviceName}.service`;
+  const result = await executeCommand(connection, `sudo systemctl restart ${svcName} 2>&1`);
   const success = result.code === 0;
 
   return {
@@ -454,6 +501,67 @@ export async function restartSystemdService(connection: NodeSSH, serviceName: st
       ? `Service '${serviceName}' restarted successfully`
       : `Failed to restart service: ${result.stderr || result.stdout}`,
   };
+}
+
+/**
+ * Stop a systemd service
+ */
+export async function stopSystemdService(connection: NodeSSH, serviceName: string): Promise<RestartResult> {
+  // Ensure serviceName has .service suffix for systemctl commands
+  const svcName = serviceName.endsWith(".service") ? serviceName : `${serviceName}.service`;
+  const result = await executeCommand(connection, `sudo systemctl stop ${svcName} 2>&1`);
+  const success = result.code === 0;
+
+  return {
+    success,
+    message: success
+      ? `Service '${serviceName}' stopped successfully`
+      : `Failed to stop service: ${result.stderr || result.stdout}`,
+  };
+}
+
+/**
+ * Get systemd service status
+ */
+export async function getSystemdServiceStatus(connection: NodeSSH, serviceName: string): Promise<{ active: boolean; status: string }> {
+  // Ensure serviceName has .service suffix for systemctl commands
+  const svcName = serviceName.endsWith(".service") ? serviceName : `${serviceName}.service`;
+
+  const result = await executeCommand(connection, `systemctl is-active ${svcName} 2>&1`);
+  const isActive = result.stdout.trim() === "active";
+
+  const statusResult = await executeCommand(connection, `systemctl status ${svcName} --no-pager 2>&1`);
+  const status = statusResult.stdout || statusResult.stderr || "Unknown";
+
+  return { active: isActive, status };
+}
+
+/**
+ * Get systemd service detailed status (activeState and subState)
+ */
+export async function getSystemdServiceDetailedStatus(connection: NodeSSH, serviceName: string): Promise<{ activeState: string; subState: string; description: string }> {
+  // Ensure serviceName has .service suffix for systemctl commands
+  const svcName = serviceName.endsWith(".service") ? serviceName : `${serviceName}.service`;
+
+  // Get active state and substate from systemctl show
+  const result = await executeCommand(connection, `systemctl show ${svcName} --property=ActiveState,SubState,Description --no-pager 2>&1`);
+
+  let activeState = "unknown";
+  let subState = "unknown";
+  let description = "";
+
+  const lines = result.stdout.split("\n");
+  for (const line of lines) {
+    if (line.startsWith("ActiveState=")) {
+      activeState = line.split("=")[1] || "unknown";
+    } else if (line.startsWith("SubState=")) {
+      subState = line.split("=")[1] || "unknown";
+    } else if (line.startsWith("Description=")) {
+      description = line.split("=")[1] || "";
+    }
+  }
+
+  return { activeState, subState, description };
 }
 
 // ─────────────────────────────────────────────────────────────
