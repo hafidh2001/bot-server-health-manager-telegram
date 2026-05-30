@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { Telegraf } from "telegraf";
-import { readFileSync } from "fs";
-import { join } from "path";
+import { handleStart, showMainMenu } from "./handlers/start";
+import { handleHelp } from "./handlers/help";
 
 // Check required env vars
 const requiredEnvVars = ["BOT_TOKEN", "ENCRYPTION_KEY"];
@@ -35,32 +35,13 @@ bot.use(async (ctx, next) => {
   await next();
 });
 
-// Start command
-bot.command("start", async (ctx) => {
-  await ctx.reply(
-    "🤖 Welcome to HAF Service Manager!\n\n" +
-    "This bot is used for server monitoring and management via Telegram.\n\n" +
-    "Use /help to see the help menu."
-  );
-});
+// Register command handlers
+bot.command("start", handleStart);
+bot.command("help", handleHelp);
 
-// Help command
-bot.command("help", async (ctx) => {
-  const helpText = `
-📚 List of Commands:
-
-/start - Open main menu
-/help - Show this help message
-
-Bot ini masih dalam fase pengembangan.
-  `.trim();
-
-  await ctx.reply(helpText);
-});
-
-// Health check - echo message
+// Fallback for unhandled text
 bot.on("text", async (ctx) => {
-  await ctx.reply(`You said: ${ctx.message.text}`);
+  await ctx.reply("Use /start to open the main menu, or /help for available commands.");
 });
 
 // Graceful shutdown
@@ -77,7 +58,7 @@ if (!botToken) {
   process.exit(1);
 }
 
-console.log("🤖 Starting ServerBot...");
+console.log("🤖 Starting HAF Service Manager...");
 console.log(`Allowed users: ${allowedUserIds.length > 0 ? allowedUserIds.join(", ") : "ALL (not recommended)"}`);
 
 bot.launch().then(() => {
