@@ -9,6 +9,8 @@ import {
   handleAuthTypeSelect,
   handleSaveServer,
   handleSaveForced,
+  handleServerSelect,
+  showMainMenu,
 } from "./handlers";
 
 // Check required env vars
@@ -58,6 +60,16 @@ bot.action("add_save_test", async (ctx) => handleSaveServer(ctx as any, true));
 bot.action("add_save_only", async (ctx) => handleSaveServer(ctx as any, false));
 bot.action("add_save_forced", handleSaveForced);
 bot.action("add_retry", handleSaveForced);
+
+// Server list callback handlers
+bot.action("back_main", showMainMenu);
+bot.action(/^server_\d+$/, handleServerSelect);
+bot.action(/^connect_\d+$/, async (ctx) => {
+  await ctx.answerCbQuery("Connect feature coming soon!");
+});
+bot.action(/^delete_\d+$/, async (ctx) => {
+  await ctx.answerCbQuery("Delete feature coming soon!");
+});
 
 // Handle text input - single handler for both add flow and fallback
 bot.on("text", async (ctx) => {

@@ -1,9 +1,15 @@
-import { Context } from "telegraf";
+import { Context, NarrowedContext } from "telegraf";
+import { Update, CallbackQuery } from "telegraf/types";
 import { getServers } from "../db/servers";
 
 interface StartContext extends Context {
   match: RegExpExecArray | null;
 }
+
+type ServerCallbackContext = NarrowedContext<
+  StartContext,
+  Update.CallbackQueryUpdate<CallbackQuery>
+>;
 
 /**
  * Show main menu with server list
@@ -57,6 +63,52 @@ export async function showMainMenu(ctx: StartContext) {
     "🔴 = Connection status unknown\n\n" +
     "Use /help for available commands.",
     { reply_markup: { inline_keyboard: inlineKeyboard } }
+  );
+}
+
+/**
+ * Handle server selection - show Connect/Delete options
+ */
+export async function handleServerSelect(ctx: ServerCallbackContext) {
+  const callbackQuery = ctx.callbackQuery;
+  if (!("data" in callbackQuery)) return;
+
+  const data = (callbackQuery as { data: string }).data;
+
+  // Check if this is a server selection callback
+  if (!data.startsWith("server_")) return;
+
+  const serverId = parseInt(data.replace("server_", ""), 10);
+  if (isNaN(serverId)) return;
+
+  await ctx.answerCbQuery();
+
+  // Get server info
+  const userId = ctx.from?.id.toString();
+  if (!userId) return;
+
+  const servers = getServers(userId);
+  const server = servers.find((s) => s.id === serverId);
+
+  if (!server) {
+    await ctx.reply("Server not found.");
+    return;
+  }
+
+  // Show Connect and Delete options
+  await ctx.reply(
+    `🖥 Server: ${server.name}\n\n` +
+    `[${server.name}]  -->  ssh ${server.username}@${server.host} -p ${server.port}\n\n` +
+    `What would you like to do?`,
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "🟢 Connect", callback_data: `connect_${server.id}` }],
+          [{ text: "🗑 Delete", callback_data: `delete_${server.id}` }],
+          [{ text: "🔙 Back", callback_data: "back_main" }],
+        ],
+      },
+    }
   );
 }
 
