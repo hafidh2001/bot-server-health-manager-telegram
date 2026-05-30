@@ -8,3 +8,12 @@ export {
   handleSaveServer,
   handleSaveForced,
 } from "./addServer";
+export {
+  handleSpec,
+  handleDisk,
+  handleMemory,
+  handleServiceList,
+  handlePM2List,
+  handleDockerList,
+  handleLogMenu,
+} from "./serverActions";

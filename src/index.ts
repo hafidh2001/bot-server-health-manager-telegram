@@ -13,6 +13,13 @@ import {
   handleDeleteServer,
   handleDeleteConfirm,
   handleConnect,
+  handleSpec,
+  handleDisk,
+  handleMemory,
+  handleServiceList,
+  handlePM2List,
+  handleDockerList,
+  handleLogMenu,
   showMainMenu,
 } from "./handlers";
 
@@ -70,6 +77,15 @@ bot.action(/^server_\d+$/, handleServerSelect);
 bot.action(/^connect_\d+$/, handleConnect);
 bot.action(/^delete_\d+$/, handleDeleteServer);
 bot.action(/^delete_confirm_\d+$/, handleDeleteConfirm);
+
+// Server action handlers (from connect menu)
+bot.action(/^spec_\d+$/, handleSpec);
+bot.action(/^disk_\d+$/, handleDisk);
+bot.action(/^mem_\d+$/, handleMemory);
+bot.action(/^service_\d+$/, handleServiceList);
+bot.action(/^pm2list_\d+$/, handlePM2List);
+bot.action(/^dockerlist_\d+$/, handleDockerList);
+bot.action(/^log_\d+$/, handleLogMenu);
 
 // Handle text input - single handler for both add flow and fallback
 bot.on("text", async (ctx) => {
