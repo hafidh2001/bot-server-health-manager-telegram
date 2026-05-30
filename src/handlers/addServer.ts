@@ -56,8 +56,8 @@ function formatServerSummary(state: AddServerState): string {
   const port = state.port || 22;
 
   return (
-    `[alias] ssh <user>@<host> -p <port>\n` +
-    `[${name}] ssh ${username}@${host} -p ${port}`
+    `[alias]  -->  ssh <username>@<host/ip_address> -p <port>\n` +
+    `[${name}]  -->  ssh ${username}@${host} -p ${port}`
   );
 }
 
