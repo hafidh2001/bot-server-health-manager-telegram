@@ -38,19 +38,19 @@ bot.use(async (ctx, next) => {
 // Start command
 bot.command("start", async (ctx) => {
   await ctx.reply(
-    "🤖 Selamat datang di ServerBot!\n\n" +
-    "Bot ini digunakan untuk monitoring dan manajemen server via Telegram.\n\n" +
-    "Gunakan /help untuk melihat bantuan."
+    "🤖 Welcome to HAF Service Manager!\n\n" +
+    "This bot is used for server monitoring and management via Telegram.\n\n" +
+    "Use /help to see the help menu."
   );
 });
 
 // Help command
 bot.command("help", async (ctx) => {
   const helpText = `
-📚 Daftar Command:
+📚 List of Commands:
 
-/start - Buka menu utama
-/help - Tampilkan bantuan ini
+/start - Open main menu
+/help - Show this help message
 
 Bot ini masih dalam fase pengembangan.
   `.trim();
