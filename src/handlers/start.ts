@@ -1,6 +1,6 @@
 import { Context, NarrowedContext } from "telegraf";
 import { Update, CallbackQuery } from "telegraf/types";
-import { getServers } from "../db/servers";
+import { getServers, deleteServer } from "../db/servers";
 
 interface StartContext extends Context {
   match: RegExpExecArray | null;
@@ -106,6 +106,130 @@ export async function handleServerSelect(ctx: ServerCallbackContext) {
           [{ text: "🟢 Connect", callback_data: `connect_${server.id}` }],
           [{ text: "🗑 Delete", callback_data: `delete_${server.id}` }],
           [{ text: "🔙 Back", callback_data: "back_main" }],
+        ],
+      },
+    }
+  );
+}
+
+/**
+ * Handle delete server - show confirmation
+ */
+export async function handleDeleteServer(ctx: ServerCallbackContext) {
+  const callbackQuery = ctx.callbackQuery;
+  if (!("data" in callbackQuery)) return;
+
+  const data = (callbackQuery as { data: string }).data;
+
+  if (!data.startsWith("delete_")) return;
+
+  const serverId = parseInt(data.replace("delete_", ""), 10);
+  if (isNaN(serverId)) return;
+
+  await ctx.answerCbQuery();
+
+  const userId = ctx.from?.id.toString();
+  if (!userId) return;
+
+  const servers = getServers(userId);
+  const server = servers.find((s) => s.id === serverId);
+
+  if (!server) {
+    await ctx.reply("Server not found.");
+    return;
+  }
+
+  await ctx.reply(
+    `⚠️ Delete Server: ${server.name}?\n\n` +
+    `[${server.name}]  -->  ssh ${server.username}@${server.host} -p ${server.port}\n\n` +
+    `This action cannot be undone.`,
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "✅ Yes, Delete", callback_data: `delete_confirm_${server.id}` }],
+          [{ text: "❌ Cancel", callback_data: `server_${server.id}` }],
+        ],
+      },
+    }
+  );
+}
+
+/**
+ * Handle delete confirmation - actually delete the server
+ */
+export async function handleDeleteConfirm(ctx: ServerCallbackContext) {
+  const callbackQuery = ctx.callbackQuery;
+  if (!("data" in callbackQuery)) return;
+
+  const data = (callbackQuery as { data: string }).data;
+
+  if (!data.startsWith("delete_confirm_")) return;
+
+  const serverId = parseInt(data.replace("delete_confirm_", ""), 10);
+  if (isNaN(serverId)) return;
+
+  await ctx.answerCbQuery();
+
+  const userId = ctx.from?.id.toString();
+  if (!userId) return;
+
+  const success = deleteServer(userId, serverId);
+
+  if (success) {
+    await ctx.reply("✅ Server deleted successfully.");
+    await showMainMenu(ctx as unknown as StartContext);
+  } else {
+    await ctx.reply("❌ Failed to delete server. Please try again.");
+  }
+}
+
+/**
+ * Handle connect - show full server action menu
+ */
+export async function handleConnect(ctx: ServerCallbackContext) {
+  const callbackQuery = ctx.callbackQuery;
+  if (!("data" in callbackQuery)) return;
+
+  const data = (callbackQuery as { data: string }).data;
+
+  if (!data.startsWith("connect_")) return;
+
+  const serverId = parseInt(data.replace("connect_", ""), 10);
+  if (isNaN(serverId)) return;
+
+  await ctx.answerCbQuery();
+
+  const userId = ctx.from?.id.toString();
+  if (!userId) return;
+
+  const servers = getServers(userId);
+  const server = servers.find((s) => s.id === serverId);
+
+  if (!server) {
+    await ctx.reply("Server not found.");
+    return;
+  }
+
+  await ctx.reply(
+    `🖥 Server: ${server.name}\n` +
+    `[${server.name}]  -->  ssh ${server.username}@${server.host} -p ${server.port}\n\n` +
+    `Select an action:`,
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: "💻 CLI Mode", callback_data: `cli_${server.id}` },
+            { text: "📋 Spesifikasi", callback_data: `spec_${server.id}` },
+          ],
+          [
+            { text: "💾 Disk Usage", callback_data: `disk_${server.id}` },
+            { text: "🧠 Memory Usage", callback_data: `mem_${server.id}` },
+          ],
+          [
+            { text: "🔧 Service List", callback_data: `service_${server.id}` },
+            { text: "📜 Lihat Log", callback_data: `log_${server.id}` },
+          ],
+          [{ text: "🔙 Back", callback_data: `server_${server.id}` }],
         ],
       },
     }

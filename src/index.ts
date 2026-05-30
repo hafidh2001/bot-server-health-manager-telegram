@@ -10,6 +10,9 @@ import {
   handleSaveServer,
   handleSaveForced,
   handleServerSelect,
+  handleDeleteServer,
+  handleDeleteConfirm,
+  handleConnect,
   showMainMenu,
 } from "./handlers";
 
@@ -64,12 +67,9 @@ bot.action("add_retry", handleSaveForced);
 // Server list callback handlers
 bot.action("back_main", showMainMenu);
 bot.action(/^server_\d+$/, handleServerSelect);
-bot.action(/^connect_\d+$/, async (ctx) => {
-  await ctx.answerCbQuery("Connect feature coming soon!");
-});
-bot.action(/^delete_\d+$/, async (ctx) => {
-  await ctx.answerCbQuery("Delete feature coming soon!");
-});
+bot.action(/^connect_\d+$/, handleConnect);
+bot.action(/^delete_\d+$/, handleDeleteServer);
+bot.action(/^delete_confirm_\d+$/, handleDeleteConfirm);
 
 // Handle text input - single handler for both add flow and fallback
 bot.on("text", async (ctx) => {
